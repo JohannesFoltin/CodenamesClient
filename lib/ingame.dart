@@ -37,140 +37,160 @@ class _IngameState extends State<Ingame> {
 
   @override
   Widget build(BuildContext context) {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeLeft,
-      ]);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+    ]);
     var gameCon = Provider.of<Controller>(context).game;
     var provider = Provider.of<Controller>(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(provider.spielerName),
-        centerTitle: true,
-        backgroundColor: (provider.spielerRole == "AgentB") ||
-                (provider.spielerRole == "GCB")
-            ? Colors.blue.shade900
-            : Colors.red.shade900,
-        leadingWidth: 300,
-        leading: Center(
-          child: Text(
-            gameCon.WinCase == ""?
-              gameCon.CurrentTeam == true ? "Blau ist dran" : "Rot ist dran":"${gameCon.WinCase} hat gewonnen. Grund: ${gameCon.WinReason}"),
-        ),
-        actions: [
-          isGeheimdienstChef(provider)
-              ? const SizedBox.shrink()
-              : TextButton(
+    return WillPopScope(
+      onWillPop: () async => false,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(provider.spielerName),
+          centerTitle: true,
+          backgroundColor: (provider.spielerRole == "AgentB") ||
+                  (provider.spielerRole == "GCB")
+              ? Colors.blue.shade900
+              : Colors.red.shade900,
+          leadingWidth: 200,
+          leading: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(gameCon.WinCase == ""
+                  ? gameCon.CurrentTeam == true
+                      ? "Blau ist dran"
+                      : "Rot ist dran"
+                  : "${gameCon.WinCase} hat gewonnen. Grund: ${gameCon.WinReason}"),
+            ],
+          ),
+          actions: [
+            isGeheimdienstChef(provider)
+                ? TextButton(
                   onPressed: () => {
-                    Provider.of<Controller>(context, listen: false)
-                        .sendCardSelection(myCard.Card("Pass", "", false))
-                  },
-                  child: Text(provider.cardSelectedFrom("Pass") != ""
-                      ? "Pass!"
-                      : "Pass"),
-                )
-        ],
-      ),
-      body:LayoutGrid(
-              columnSizes: [1.fr, 1.fr, 1.fr, 1.fr, 1.fr],
-              rowSizes: [1.fr, 1.fr, 1.fr, 1.fr, 1.fr],
-              children: List.generate(gameCon.Cards.length, (index) {
-                myCard.Card card = gameCon.Cards[index];
-                if (card.selected == false) {
-                  return isGeheimdienstChef(provider) && card.Coverd == false
+                    provider.selectAllCards(),
+                    setState(() {
+                    })
+                }, child: Text("Overlay",style: TextStyle(color: Colors.white),))
+                : TextButton(
+                
+                    onPressed: () => {
+                      Provider.of<Controller>(context, listen: false)
+                          .sendCardSelection(myCard.Card("Pass", "", false)),
+                          Provider.of<Controller>(context, listen: false)
+                          .sendCardSelection(myCard.Card("Pass", "", false))
+                    },
+                    child: Text(provider.cardSelectedFrom("Pass") != ""
+                        ? "Pass!"
+                        : "Pass",style: TextStyle(color: Colors.white)),
+                  )
+          ],
+        ),
+        body: LayoutGrid(
+          columnSizes: [1.fr, 1.fr, 1.fr, 1.fr, 1.fr],
+          rowSizes: [1.fr, 1.fr, 1.fr, 1.fr, 1.fr],
+          children: List.generate(gameCon.Cards.length, (index) {
+            myCard.Card card = gameCon.Cards[index];
+            if (card.selected == false || isGeheimdienstChef(provider)) {
+              return isGeheimdienstChef(provider) && card.Coverd == false && card.selected == false
                   ? const SizedBox.shrink()
-                  :GestureDetector(
-                        onTap: () => {
-                          setState(() {
-                            if ((provider.spielerRole == "AgentR") ||
-                                (provider.spielerRole == "AgentB")) {
-                              if (((gameCon.CurrentTeam == true) &&
-                                      (provider.spielerRole == "AgentB")) ||
-                                  ((gameCon.CurrentTeam == false) &&
-                                      (provider.spielerRole == "AgentR"))) {
-                                if (card.Coverd == true) {
-                                  selectCard(card);
-                                }
-                              } else {
-                                //ToDo
+                  : GestureDetector(
+                      onTap: () => {
+                        setState(() {
+                          if ((provider.spielerRole == "AgentR") ||
+                              (provider.spielerRole == "AgentB")) {
+                            if (((gameCon.CurrentTeam == true) &&
+                                    (provider.spielerRole == "AgentB")) ||
+                                ((gameCon.CurrentTeam == false) &&
+                                    (provider.spielerRole == "AgentR"))) {
+                              if (card.Coverd == true) {
+                                selectCard(card);
                               }
-                            }
-                          })
-                        },
-                        child: Card(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20.0),
-                          ),
-                          color: card.Coverd == false || (isGeheimdienstChef(provider))
-                              ? colorSelector(card)
-                              : Colors.white,
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    provider.cardSelectedFrom(card.Word) != ""
-                                        ? "Is selected From: ${provider.cardSelectedFrom(card.Word)}"
-                                        : "",
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                Text(
-                                  card.Word,
-                                  style: TextStyle(
-                                      fontSize: 20,
-                                      color: (card.Owner == "Black" &&
-                                              card.Coverd == false) || (isGeheimdienstChef(provider)&&card.Owner == "Black")
-                                          ? Colors.white
-                                          : Colors.black),
-                                ),
-                              ],
-                            ),
-                          ),
+                            } else {}
+                          }
+                        })
+                      },
+                      child: Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20.0),
                         ),
-                      );
-                } else {
-                  return Card(
+                        color:
+                            card.Coverd == false || (isGeheimdienstChef(provider))
+                                ? colorSelector(card)
+                                : Colors.white,
                         child: Center(
-                          child: Row(
+                          child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Expanded(
-                                child: Container(
-                                  height: double.infinity,
-                                  child: ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                          primary: Colors.red),
-                                      onPressed: () => {
-                                            setState(() {
-                                              card.selected = false;
-                                            })
-                                          },
-                                      child: const Icon(Icons.close)),
-                                ),
+                              provider.cardSelectedFrom(card.Word) == ""
+                                  ? SizedBox.shrink()
+                                  : Text(
+                                      "${provider.cardSelectedFrom(card.Word)} ",
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                              Text(
+                                card.Word,
+                                style: TextStyle(
+                                    fontSize: 20,
+                                    color: (card.Owner == "Black" &&
+                                                card.Coverd == false) ||
+                                            (isGeheimdienstChef(provider) &&
+                                                card.Owner == "Black")
+                                        ? Colors.white
+                                        : Colors.black),
                               ),
-                              Expanded(
-                                  child: Container(
-                                      height: double.infinity,
-                                      child: ElevatedButton(
-                                          onPressed: () => {
-                                                  Provider.of<Controller>(
-                                                          context,
-                                                          listen: false)
-                                                      .sendCardSelection(card),
-                                                  card.selected = false,
-                                                
-                                              },
-                                          child: const Icon(Icons.check))))
                             ],
                           ),
                         ),
-                      );
-                }
-              }),
-            ),
+                      ),
+                    );
+            } else {
+              return Card(
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: double.infinity,
+                          child: ElevatedButton(
+                              style:
+                                  ElevatedButton.styleFrom(primary: Colors.red),
+                              onPressed: () => {
+                                    setState(() {
+                                      card.selected = false;
+                                    })
+                                  },
+                              child: const Icon(Icons.close)),
+                        ),
+                      ),
+                      Expanded(
+                          child: Container(
+                              height: double.infinity,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(primary: Colors.green),
+                                  onPressed: () => {
+                                        //Keine Ahnung warum, aber wenn nur einmal muss man zweimal drücken. So funktioniert es...
+                                        Provider.of<Controller>(context,
+                                                listen: false)
+                                            .sendCardSelection(card),
+                                        Provider.of<Controller>(context,
+                                                listen: false)
+                                            .sendCardSelection(card),
+                                        card.selected = false,
+                                      },
+                                  child: const Icon(Icons.check))))
+                    ],
+                  ),
+                ),
+              );
+            }
+          }),
+        ),
+      ),
     );
   }
 
-  bool isGeheimdienstChef(Controller provider) => provider.spielerRole == "GCB"|| provider.spielerRole == "GCR";
+  bool isGeheimdienstChef(Controller provider) =>
+      provider.spielerRole == "GCB" || provider.spielerRole == "GCR";
 }

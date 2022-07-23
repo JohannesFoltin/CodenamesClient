@@ -25,7 +25,11 @@ class Controller extends ChangeNotifier {
     }, onError: (error) => {print(error)}, onDone: () => Restart.restartApp());
   }
 
-
+  void selectAllCards(){
+    for(int i = 0;i < game.Cards.length;i++){
+      game.Cards[i].selected = !game.Cards[i].selected;
+    }
+  }
 
   String cardSelectedFrom(String name) {
     String tmpString = "";
